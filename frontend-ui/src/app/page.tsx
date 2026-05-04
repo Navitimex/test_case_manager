@@ -25,6 +25,10 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingCase, setEditingCase] = useState<TestCase | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  
+  const [apiUrl, setApiUrl] = useState('');
+  const [backendStatus, setBackendStatus] = useState<'checking' | 'online' | 'offline'>('checking');
 
   // Form State
   const [title, setTitle] = useState('');
@@ -34,26 +38,59 @@ export default function Dashboard() {
   const [status, setStatus] = useState('pending');
   const [steps, setSteps] = useState<TestCaseStep[]>([]);
 
-  const API_URL = 'http://localhost:4000/api/testcases';
+  const checkHealth = async (url: string) => {
+    try {
+      setBackendStatus('checking');
+      const controller = new AbortController();
+      const id = setTimeout(() => controller.abort(), 3000); // 3s timeout
+      
+      const base = url.split('/api')[0];
+      const res = await fetch(`${base}/health`, { signal: controller.signal });
+      clearTimeout(id);
+      
+      if (res.ok) {
+        setBackendStatus('online');
+        return true;
+      }
+    } catch (e) {
+      console.error('Health check failed', e);
+    }
+    setBackendStatus('offline');
+    return false;
+  };
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const hostname = window.location.hostname;
+      const port = 4000;
+      const newUrl = `http://${hostname}:${port}/api/testcases`;
+      setApiUrl(newUrl);
+      checkHealth(newUrl);
+    }
+  }, []);
 
   const fetchCases = async () => {
+    if (!apiUrl) return;
     try {
       setLoading(true);
-      const res = await fetch(API_URL);
-      if (!res.ok) throw new Error('Failed to fetch test cases');
+      setError(null);
+      const res = await fetch(apiUrl);
+      if (!res.ok) throw new Error(`Error ${res.status}: ${res.statusText}`);
       const data = await res.json();
       setTestCases(data);
-    } catch (error) {
-      console.error(error);
+    } catch (error: any) {
+      console.error('Fetch error:', error);
+      setError(`Error de conexión: No se pudo obtener datos de ${apiUrl}`);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    fetchCases();
-  }, []);
+    if (apiUrl) {
+      fetchCases();
+    }
+  }, [apiUrl]);
 
   const openForm = (tc?: TestCase) => {
     if (tc) {
@@ -100,43 +137,47 @@ export default function Dashboard() {
       priority,
       severity,
       status,
-      steps: steps.filter(s => s.description.trim() !== ''), // Filter empty steps
+      steps: steps.filter(s => s.description.trim() !== ''),
     };
 
     try {
       let res;
       if (editingCase && editingCase.id) {
-        res = await fetch(`${API_URL}/${editingCase.id}`, {
+        res = await fetch(`${apiUrl}/${editingCase.id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
         });
       } else {
-        res = await fetch(API_URL, {
+        res = await fetch(apiUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
         });
       }
 
-      if (!res.ok) throw new Error('Failed to save test case');
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to save test case');
+      }
       
       closeForm();
       fetchCases();
-    } catch (error) {
-      console.error(error);
-      alert('Failed to save test case. Please check if the backend is running and relations exist.');
+    } catch (error: any) {
+      console.error('Save error:', error);
+      alert(`Error al guardar: ${error.message}`);
     }
   };
 
   const deleteCase = async (id: number) => {
     if (!confirm('Are you sure you want to delete this test case?')) return;
     try {
-      const res = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+      const res = await fetch(`${apiUrl}/${id}`, { method: 'DELETE' });
       if (!res.ok) throw new Error('Failed to delete test case');
       fetchCases();
-    } catch (error) {
-      console.error(error);
+    } catch (error: any) {
+      console.error('Delete error:', error);
+      alert('Error al eliminar el caso.');
     }
   };
 
@@ -145,7 +186,7 @@ export default function Dashboard() {
       case 'pass': return 'text-emerald-400 bg-emerald-400/10 border-emerald-400/20';
       case 'fail': return 'text-rose-400 bg-rose-400/10 border-rose-400/20';
       case 'skipped': return 'text-amber-400 bg-amber-400/10 border-amber-400/20';
-      default: return 'text-indigo-400 bg-indigo-400/10 border-indigo-400/20'; // pending
+      default: return 'text-indigo-400 bg-indigo-400/10 border-indigo-400/20';
     }
   };
 
@@ -170,6 +211,16 @@ export default function Dashboard() {
               </span>
             </div>
             <div className="flex items-center gap-4">
+              <div 
+                className="flex items-center gap-2 px-3 py-1 rounded-full bg-slate-900 border border-slate-800 cursor-pointer hover:bg-slate-800 transition-colors"
+                onClick={() => apiUrl && checkHealth(apiUrl)}
+                title={`API URL: ${apiUrl}`}
+              >
+                <div className={`w-2 h-2 rounded-full ${backendStatus === 'online' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]' : backendStatus === 'offline' ? 'bg-rose-500' : 'bg-amber-500 animate-pulse'}`}></div>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                  {backendStatus === 'checking' ? 'Checking...' : `API ${backendStatus}`}
+                </span>
+              </div>
               <button 
                 onClick={() => openForm()}
                 className="px-4 py-2 text-sm font-medium bg-indigo-600 hover:bg-indigo-500 text-white rounded-full transition-all duration-300 shadow-lg shadow-indigo-500/20"
@@ -213,6 +264,7 @@ export default function Dashboard() {
           <div className="p-6 border-b border-slate-800/60 flex items-center justify-between">
             <h2 className="text-xl font-semibold text-white">All Test Cases</h2>
             {loading && <span className="text-sm text-indigo-400 animate-pulse">Loading...</span>}
+            {error && <span className="text-sm text-rose-400 font-medium">{error}</span>}
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
@@ -387,7 +439,7 @@ export default function Dashboard() {
                           />
                         </div>
                         <button 
-                          type="button"
+                          type="button" 
                           onClick={() => removeStep(index)}
                           className="text-rose-400 hover:text-rose-300 p-2 shrink-0"
                         >
