@@ -1,0 +1,32 @@
+# Dependencias de Node (Crucial ignorar esto en todas las subcarpetas)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Variables de entorno (¡Para que tu contraseña de MySQL no termine en internet!)
+.env
+.env.*
+!.env.example
+
+# Build de Next.js (Frontend)
+.next/
+out/
+build/
+
+# Build de TypeScript (Backend)
+dist/
+
+# Logs y archivos del sistema operativo
+logs
+*.log
+.DS_Store
+Thumbs.db
+
+# Reportes y cachés de testing (Playwright / Cypress)
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
+cypress/videos/
+cypress/screenshots/

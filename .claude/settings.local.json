@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx create-next-app@14 testcase-manager --js --tailwind --eslint --app --src-dir --no-typescript --import-alias \"@/*\" --use-npm)",
+      "Bash(npm install *)",
+      "Bash(npx shadcn@latest init --defaults)",
+      "Bash(mkdir *)",
+      "Bash(node -e \"console.log\\(require\\('./node_modules/tailwindcss/package.json'\\).version\\)\")",
+      "Bash(npm run *)",
+      "Bash(nslookup _mongodb._tcp.cluster0.kp4fyqk.mongodb.net)",
+      "Bash(nslookup cluster0.kp4fyqk.mongodb.net)",
+      "Bash(nslookup _mongodb._tcp.cluster0.kp4fyqk.mongodb.net 8.8.8.8)",
+      "Bash(ping -n 3 cluster0.kp4fyqk.mongodb.net)",
+      "Bash(nslookup -type=SRV _mongodb._tcp.cluster0.kp4fyqk.mongodb.net 8.8.8.8)",
+      "Bash(nslookup -type=SRV _mongodb._tcp.cluster0.kp4fyqk.mongodb.net 1.1.1.1)"
+    ]
+  }
+}
