@@ -1,26 +1,109 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
-  provider = "prisma-client"
-  output   = "../generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "mysql"
 }
 
+model User {
+  id                Int             @id @default(autoincrement())
+  name              String
+  email             String          @unique
+  password          String
+  role              String          @default("viewer") // admin, editor, viewer
+  isActive          Boolean         @default(true)
+  
+  createdProjects   Project[]       @relation("ProjectCreator")
+  projectMembers    ProjectMember[]
+  createdModules    Module[]        @relation("ModuleCreator")
+  createdTestCases  TestCase[]      @relation("TestCaseCreator")
+  assignedTestCases TestCase[]      @relation("TestCaseAssignee")
+  
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+}
+
+model Project {
+  id          Int             @id @default(autoincrement())
+  name        String
+  description String?
+  createdById Int
+  createdBy   User            @relation("ProjectCreator", fields: [createdById], references: [id])
+  
+  members     ProjectMember[]
+  modules     Module[]
+  testCases   TestCase[]
+  
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+}
+
+model ProjectMember {
+  id        Int      @id @default(autoincrement())
+  projectId Int
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      String   // admin, editor, viewer
+
+  @@unique([projectId, userId])
+}
+
+model Module {
+  id          Int        @id @default(autoincrement())
+  name        String
+  description String?
+  projectId   Int
+  project     Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdById Int
+  createdBy   User       @relation("ModuleCreator", fields: [createdById], references: [id])
+  
+  testCases   TestCase[]
+  
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
 model TestCase {
+  id            Int             @id @default(autoincrement())
+  title         String
+  description   String?
+  preconditions String?         // Preserved from the prior definition
+  moduleId      Int
+  module        Module          @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  projectId     Int
+  project       Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  
+  priority      String          @default("medium") // critical, high, medium, low
+  severity      String          @default("minor")  // blocker, major, minor, trivial
+  status        String          @default("pending") // pending, pass, fail, skipped
+  
+  assignedToId  Int?
+  assignedTo    User?           @relation("TestCaseAssignee", fields: [assignedToId], references: [id])
+  tags          Json?           // Storing arrays of strings as Json
+  
+  createdById   Int
+  createdBy     User            @relation("TestCaseCreator", fields: [createdById], references: [id])
+  
+  steps         TestCaseStep[]
+  
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  @@index([projectId, status])
+  @@index([moduleId])
+}
+
+model TestCaseStep {
   id             Int      @id @default(autoincrement())
-  title          String
-  description    String?
-  preconditions  String?
-  steps          String   @db.Text
-  expectedResult String   @db.Text
-  status         String   @default("Draft")
-  priority       String   @default("Medium")
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  testCaseId     Int
+  testCase       TestCase @relation(fields: [testCaseId], references: [id], onDelete: Cascade)
+  order          Int
+  description    String   @db.Text
+  expectedResult String?  @db.Text
+  actualResult   String?  @db.Text
 }
