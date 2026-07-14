@@ -1,4 +1,4 @@
-import { Prisma, PrismaClient } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 
 /**
  * Single shared Prisma client for the whole API.
@@ -12,12 +12,21 @@ if (process.env.NODE_ENV !== 'production') {
   globalForPrisma.prisma = prisma;
 }
 
+function hasPrismaCode(error: unknown, code: string): boolean {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'code' in error &&
+    (error as { code: unknown }).code === code
+  );
+}
+
 /** True when a Prisma operation failed because the target record does not exist. */
 export function isRecordNotFound(error: unknown): boolean {
-  return error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025';
+  return hasPrismaCode(error, 'P2025');
 }
 
 /** True when a Prisma operation failed due to a unique constraint violation. */
 export function isUniqueConstraint(error: unknown): boolean {
-  return error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002';
+  return hasPrismaCode(error, 'P2002');
 }
