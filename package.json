@@ -1,0 +1,16 @@
+{
+  "name": "testflow",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "shared",
+    "backend-api",
+    "frontend-ui"
+  ],
+  "scripts": {
+    "dev:backend": "npm run dev --workspace=backend-api",
+    "dev:frontend": "npm run dev --workspace=frontend-ui",
+    "build:backend": "npm run build --workspace=backend-api",
+    "build:frontend": "npm run build --workspace=frontend-ui"
+  }
+}
