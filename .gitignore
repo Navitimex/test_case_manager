@@ -30,3 +30,5 @@ blob-report/
 playwright/.cache/
 cypress/videos/
 cypress/screenshots/
+# Dev-only seed credentials (do not commit)
+CREDENTIALS.txt

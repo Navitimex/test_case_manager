@@ -12,7 +12,12 @@
       "Bash(nslookup _mongodb._tcp.cluster0.kp4fyqk.mongodb.net 8.8.8.8)",
       "Bash(ping -n 3 cluster0.kp4fyqk.mongodb.net)",
       "Bash(nslookup -type=SRV _mongodb._tcp.cluster0.kp4fyqk.mongodb.net 8.8.8.8)",
-      "Bash(nslookup -type=SRV _mongodb._tcp.cluster0.kp4fyqk.mongodb.net 1.1.1.1)"
+      "Bash(nslookup -type=SRV _mongodb._tcp.cluster0.kp4fyqk.mongodb.net 1.1.1.1)",
+      "PowerShell(Get-ChildItem -Path \"c:\\\\Code Projects\\\\TestCase Manager\" -Recurse -Force | Where-Object { -not $_.FullName.Contains\\('\\\\.git'\\) -and -not $_.FullName.Contains\\('\\\\node_modules'\\) } | Select-Object @{Name='Path';Expression={$_.FullName -replace [regex]::Escape\\('c:\\\\Code Projects\\\\TestCase Manager'\\), '.'}} | Sort-Object Path | ForEach-Object { $_.Path })",
+      "PowerShell($env:PRISMA_USER_CONSENT_FOR_DANGEROUS_AI_ACTION = \"yes\"; cd \"c:\\\\Code Projects\\\\TestCase Manager\\\\backend-api\"; npx prisma db push --force-reset 2>&1)",
+      "Bash(npx prisma *)",
+      "Bash(npx tsc *)",
+      "Bash(grep -v \"^Loaded\\\\|^$\")"
     ]
   }
 }
